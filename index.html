@@ -57,7 +57,7 @@
       background-color: #0073e6;
     }
     
-    /* 3カラムレイアウト： [左GIF (250px)] [中央名言 (1fr)] [右GIF (250px)] */
+    /* 3カラムレイアウト： [左GIF (240px)] [中央名言 (1fr)] [右GIF (240px)] */
     .content-grid {
       display: grid;
       grid-template-columns: 240px 1fr 240px;
@@ -148,7 +148,7 @@
     <button class="btn" onclick="fetchAll()">別の内容を取得する</button>
     
     <!-- ローディング表示 -->
-    <div id="loading" class="status-msg">データを取得・翻訳中...</div>
+    <div id="loading" class="status-msg">データを取得中...</div>
 
     <!-- 3カラム表示エリア (左GIF / 中央名言 / 右GIF) -->
     <div id="content-grid" class="content-grid" style="display: none;">
@@ -181,7 +181,9 @@
       currentMode = mode;
       
       document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
+      // イベントが発生しなくても動作するように修正
+      const target = event ? event.target : document.querySelector(`[onclick="switchMode('${mode}')"]`);
+      if(target) target.classList.add('active');
 
       const jaEl = document.getElementById('quote-ja');
       const enEl = document.getElementById('quote-en');
@@ -224,8 +226,8 @@
       document.getElementById('quote-author').textContent = `— ${data.author}`;
     }
 
-    // 2. GIFの取得（指定したID要素に挿入する関数）
-    async function fetchGifToElement(elementId) {
+    // 2. GIFのURLを取得し、画像プレロードを行う関数
+    async function getAndPreloadGif(elementId) {
       const apiKey = 'dc6zaTOxFJmzC';
       const tags = ['funny', 'cat', 'happy', 'cool', 'dance', 'anime', 'art', 'reaction'];
       const randomTag = tags[Math.floor(Math.random() * tags.length)];
@@ -236,10 +238,22 @@
       const data = await response.json();
       const gifUrl = data.data.images.original.url;
       
-      document.getElementById(elementId).src = gifUrl;
+      // 画像をプリロード（裏側で読み込み）するPromiseを返す
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = gifUrl;
+        img.onload = () => {
+          document.getElementById(elementId).src = gifUrl; // 読み込み完了したらsrcにセット
+          resolve(gifUrl);
+        };
+        img.onerror = () => reject(new Error('GIF画像の読み込みに失敗しました'));
+        
+        // タイムアウト処理（5秒経っても読み込めなければ次へ進む）
+        setTimeout(() => resolve(gifUrl), 5000); 
+      });
     }
 
-    // 名言 ＆ 左右のGIF（合計3つのリクエスト）を一括で並列取得
+    // 名言 ➔ 左GIF ➔ 右GIF の順に直列処理（安定性重視）
     async function fetchAll() {
       const loadingEl = document.getElementById('loading');
       const gridEl = document.getElementById('content-grid');
@@ -248,19 +262,17 @@
       gridEl.style.display = 'none';
 
       try {
-        // Promise.all で名言・左GIF・右GIFの3つを同時に処理
-        await Promise.all([
-          fetchQuote(),
-          fetchGifToElement('gif-img-left'),
-          fetchGifToElement('gif-img-right')
-        ]);
+        // 直列処理（順番に待つ）に変更
+        await fetchQuote(); // まず名言
+        await getAndPreloadGif('gif-img-left'); // 次に左GIF
+        await getAndPreloadGif('gif-img-right'); // 最後に右GIF
 
         loadingEl.style.display = 'none';
         gridEl.style.display = 'grid';
 
       } catch (error) {
         console.error('エラーが発生しました:', error);
-        loadingEl.textContent = 'データの取得に失敗しました。再試行してください。';
+        loadingEl.textContent = 'データの取得に失敗しました（タイムアウト等の可能性）。再試行してください。';
       }
     }
 
