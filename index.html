@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>世界の名言 ランダムジェネレーター</title>
+  <title>世界の名言 ＆ ランダムCatジェネレーター</title>
   <style>
     body {
       font-family: sans-serif;
@@ -238,7 +238,7 @@
       document.getElementById('quote-author').textContent = `— ${data.author}`;
     }
 
-    // 2. 猫画像の取得（GIPHYを廃止し、RandomCat APIを使用）
+    // 2. 猫画像の取得（The Cat APIを使用。失敗してもエラー画面にしない）
     async function fetchSingleCatForBoth() {
       const imgLeft = document.getElementById('gif-img-left');
       const imgRight = document.getElementById('gif-img-right');
@@ -253,12 +253,13 @@
       });
 
       try {
-        // CROS対応・登録不要のRandomCat APIを使用
-        const response = await fetch('https://aws.random.cat/meow');
+        // 【修正点】aws.random.cat から thecatapi.com へ変更
+        // このAPIは配列形式 [ { "url": "..." } ] でデータを返します
+        const response = await fetch('https://api.thecatapi.com/v1/images/search');
         if (!response.ok) throw new Error('Cat APIエラー');
 
         const data = await response.json();
-        const catUrl = data.file; // 猫画像のURL
+        const catUrl = data[0].url; // 猫画像のURLを取得
 
         // 左右同時に同じURLをセット
         imgLeft.src = catUrl;
@@ -274,8 +275,8 @@
         };
 
       } catch (error) {
-        console.error('Cat取得失敗（非表示）:', error);
-        [statusLeft, statusRight].forEach(el => el.textContent = '（Cat APIエラー）');
+        console.error('Cat取得失敗:', error);
+        [statusLeft, statusRight].forEach(el => el.textContent = '（Cat APIダウン中）');
       }
     }
 
@@ -294,7 +295,7 @@
         loadingEl.style.display = 'none';
         gridEl.style.display = 'grid';
 
-        // 左右同じ猫画像を表示（失敗してもエラー画面にしない）
+        // 左右同じ猫画像を表示
         fetchSingleCatForBoth();
 
       } catch (error) {
