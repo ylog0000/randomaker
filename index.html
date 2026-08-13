@@ -65,7 +65,7 @@
 <body>
 
   <div class="container">
-    <h1>世界のiting名言ジェネレーター</h1>
+    <h1>世界の名言ジェネレーター</h1>
     <button class="btn" onclick="fetchQuote()">別の名言を取得する</button>
     
     <div id="loading">名言を取得中...</div>
@@ -84,8 +84,8 @@
       cardEl.style.display = 'none';
 
       try {
-        // Quotable APIからランダムな名言を取得
-        const response = await fetch('https://api.quotable.io/random');
+        // SSL証明書が正常でCORS対応の代替API（DummyJSON Quotes API）を使用
+        const response = await fetch('https://dummyjson.com/quotes/random');
         
         if (!response.ok) {
           throw new Error(`HTTPエラー! ステータス: ${response.status}`);
@@ -93,8 +93,8 @@
 
         const data = await response.json();
 
-        // 取得したデータ（content: 名言本文, author: 著者名）をセット
-        document.getElementById('quote-text').textContent = `“ ${data.content} ”`;
+        // 取得したデータ（quote: 名言本文, author: 著者名）をセット
+        document.getElementById('quote-text').textContent = `“ ${data.quote} ”`;
         document.getElementById('quote-author').textContent = `— ${data.author}`;
 
         loadingEl.style.display = 'none';
