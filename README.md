@@ -1,0 +1,2 @@
+# randomaker
+testようリポジトリ
