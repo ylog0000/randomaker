@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>世界の名言 ＆ ランダムGIFジェネレーター</title>
+  <title>世界の名言 ランダムジェネレーター</title>
   <style>
     body {
       font-family: sans-serif;
@@ -57,7 +57,7 @@
       background-color: #0073e6;
     }
     
-    /* 3カラムレイアウト： [左GIF (240px)] [中央名言 (1fr)] [右GIF (240px)] */
+    /* 3カラムレイアウト： [左Cat (240px)] [中央名言 (1fr)] [右Cat (240px)] */
     .content-grid {
       display: grid;
       grid-template-columns: 240px 1fr 240px;
@@ -108,7 +108,7 @@
       color: #4da6ff;
     }
 
-    /* 左右：GIFカード */
+    /* 左右：Catカード */
     .gif-card {
       border-top: 4px solid #ff4d88;
       text-align: center;
@@ -123,7 +123,7 @@
       max-height: 220px;
       border-radius: 6px;
       object-fit: contain;
-      display: none;
+      display: none; /* 初期は非表示 */
     }
     .gif-loading-msg {
       color: #888;
@@ -141,7 +141,7 @@
 <body>
 
   <div class="container">
-    <h1>世界の名言 ＆ ランダムGIF</h1>
+    <h1>世界の名言 ＆ ランダムCat</h1>
     
     <!-- 言語切り替えボタン -->
     <div class="toggle-buttons">
@@ -153,16 +153,16 @@
     <!-- 取得ボタン -->
     <button class="btn" onclick="fetchAll()">別の内容を取得する</button>
     
-    <!-- ローディング表示 -->
+    <!-- ローディング表示（メイン） -->
     <div id="loading" class="status-msg">名言を取得中...</div>
 
-    <!-- 3カラム表示エリア (左GIF / 中央名言 / 右GIF) -->
+    <!-- 3カラム表示エリア (左Cat / 中央名言 / 右Cat) -->
     <div id="content-grid" class="content-grid" style="display: none;">
       
-      <!-- 左側：GIF -->
+      <!-- 左側：Cat -->
       <div class="card gif-card">
-        <span id="gif-status-left" class="gif-loading-msg">GIF読み込み中...</span>
-        <img id="gif-img-left" src="" alt="左GIF">
+        <span id="gif-status-left" class="gif-loading-msg">Cat読み込み中...</span>
+        <img id="gif-img-left" src="" alt="左Cat">
       </div>
 
       <!-- 中央：名言 -->
@@ -172,10 +172,10 @@
         <div class="author" id="quote-author"></div>
       </div>
 
-      <!-- 右側：GIF -->
+      <!-- 右側：Cat -->
       <div class="card gif-card">
-        <span id="gif-status-right" class="gif-loading-msg">GIF読み込み中...</span>
-        <img id="gif-img-right" src="" alt="右GIF">
+        <span id="gif-status-right" class="gif-loading-msg">Cat読み込み中...</span>
+        <img id="gif-img-right" src="" alt="右Cat">
       </div>
 
     </div>
@@ -220,7 +220,7 @@
       }
     }
 
-    // 名言の取得と翻訳
+    // 1. 名言の取得と翻訳
     async function fetchQuote() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -238,8 +238,8 @@
       document.getElementById('quote-author').textContent = `— ${data.author}`;
     }
 
-    // GIFを1つだけ取得し、左右両方の要素に同じ画像を割り当てる
-    async function fetchSingleGifForBoth() {
+    // 2. 猫画像の取得（GIPHYを廃止し、RandomCat APIを使用）
+    async function fetchSingleCatForBoth() {
       const imgLeft = document.getElementById('gif-img-left');
       const imgRight = document.getElementById('gif-img-right');
       const statusLeft = document.getElementById('gif-status-left');
@@ -249,29 +249,20 @@
       [imgLeft, imgRight].forEach(el => el.style.display = 'none');
       [statusLeft, statusRight].forEach(el => {
         el.style.display = 'block';
-        el.textContent = 'GIF読み込み中...';
+        el.textContent = 'Cat読み込み中...';
       });
 
-      const apiKey = 'dc6zaTOxFJmzC';
-      const tags = ['funny', 'cat', 'happy', 'cool', 'dance', 'anime', 'reaction'];
-      const randomTag = tags[Math.floor(Math.random() * tags.length)];
-
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-        // API通信は1回のみ
-        const response = await fetch(`https://api.giphy.com/v1/gifs/random?api_key=${apiKey}&tag=${randomTag}`, { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (!response.ok) throw new Error('APIエラー');
+        // CROS対応・登録不要のRandomCat APIを使用
+        const response = await fetch('https://aws.random.cat/meow');
+        if (!response.ok) throw new Error('Cat APIエラー');
 
         const data = await response.json();
-        const gifUrl = data.data.images.original.url;
+        const catUrl = data.file; // 猫画像のURL
 
         // 左右同時に同じURLをセット
-        imgLeft.src = gifUrl;
-        imgRight.src = gifUrl;
+        imgLeft.src = catUrl;
+        imgRight.src = catUrl;
 
         imgLeft.onload = () => {
           [statusLeft, statusRight].forEach(el => el.style.display = 'none');
@@ -279,16 +270,16 @@
         };
 
         imgLeft.onerror = () => {
-          [statusLeft, statusRight].forEach(el => el.textContent = '（GIF読み込み失敗）');
+          [statusLeft, statusRight].forEach(el => el.textContent = '（画像の読み込み失敗）');
         };
 
       } catch (error) {
-        console.error('GIF取得失敗:', error);
-        [statusLeft, statusRight].forEach(el => el.textContent = '（GIF取得タイムアウト）');
+        console.error('Cat取得失敗（非表示）:', error);
+        [statusLeft, statusRight].forEach(el => el.textContent = '（Cat APIエラー）');
       }
     }
 
-    // 一括処理
+    // メイン処理
     async function fetchAll() {
       const loadingEl = document.getElementById('loading');
       const gridEl = document.getElementById('content-grid');
@@ -303,8 +294,8 @@
         loadingEl.style.display = 'none';
         gridEl.style.display = 'grid';
 
-        // 画面表示後に同じGIFを左右に取得・表示
-        fetchSingleGifForBoth();
+        // 左右同じ猫画像を表示（失敗してもエラー画面にしない）
+        fetchSingleCatForBoth();
 
       } catch (error) {
         console.error('決定的なエラー:', error);
