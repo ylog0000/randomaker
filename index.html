@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>世界のiting名言ジェネレーター</title>
+  <title>世界の名言ジェネレーター</title>
   <style>
     body {
       font-family: sans-serif;
@@ -20,20 +20,46 @@
     h1 {
       color: #4da6ff;
     }
+    .toggle-buttons {
+      margin: 15px 0;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .toggle-btn {
+      background-color: #333;
+      color: #aaa;
+      border: 1px solid #555;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .toggle-btn.active {
+      background-color: #4da6ff;
+      color: #fff;
+      border-color: #4da6ff;
+    }
     .card {
       background: #2b2b2b;
       border-left: 5px solid #4da6ff;
       border-radius: 8px;
       padding: 20px;
-      margin-top: 20px;
+      margin-top: 15px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
       text-align: left;
     }
-    .quote {
+    .quote-ja {
       font-size: 1.1rem;
       line-height: 1.6;
+      color: #ffffff;
+      margin-bottom: 10px;
+    }
+    .quote-en {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #bbb;
       font-style: italic;
-      color: #e0e0e0;
     }
     .author {
       margin-top: 15px;
@@ -49,7 +75,7 @@
       font-size: 1rem;
       border-radius: 5px;
       cursor: pointer;
-      margin-top: 20px;
+      margin-top: 15px;
     }
     .btn:hover {
       background-color: #0073e6;
@@ -66,16 +92,64 @@
 
   <div class="container">
     <h1>世界の名言ジェネレーター</h1>
+    
+    <!-- 表示切り替えボタン -->
+    <div class="toggle-buttons">
+      <button class="toggle-btn active" onclick="switchMode('both')">両方表示</button>
+      <button class="toggle-btn" onclick="switchMode('ja')">日本語のみ</button>
+      <button class="toggle-btn" onclick="switchMode('en')">English</button>
+    </div>
+
     <button class="btn" onclick="fetchQuote()">別の名言を取得する</button>
     
-    <div id="loading">名言を取得中...</div>
+    <div id="loading">名言を取得・翻訳中...</div>
     <div id="quote-card" class="card" style="display: none;">
-      <div class="quote" id="quote-text"></div>
+      <div class="quote-ja" id="quote-ja"></div>
+      <div class="quote-en" id="quote-en"></div>
       <div class="author" id="quote-author"></div>
     </div>
   </div>
 
   <script>
+    let currentMode = 'both'; // 初期モード：両方表示
+
+    // 表示モードの切り替え関数
+    function switchMode(mode) {
+      currentMode = mode;
+      
+      // ボタンの見た目を更新
+      document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // 表示・非表示を制御
+      const jaEl = document.getElementById('quote-ja');
+      const enEl = document.getElementById('quote-en');
+
+      if (mode === 'both') {
+        jaEl.style.display = 'block';
+        enEl.style.display = 'block';
+      } else if (mode === 'ja') {
+        jaEl.style.display = 'block';
+        enEl.style.display = 'none';
+      } else if (mode === 'en') {
+        jaEl.style.display = 'none';
+        enEl.style.display = 'block';
+      }
+    }
+
+    // Google翻訳APIで日本語に変換する関数
+    async function translateToJapanese(text) {
+      try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ja&dt=t&q=${encodeURIComponent(text)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        return data[0].map(item => item[0]).join('');
+      } catch (error) {
+        console.error('翻訳エラー:', error);
+        return text;
+      }
+    }
+
     async function fetchQuote() {
       const loadingEl = document.getElementById('loading');
       const cardEl = document.getElementById('quote-card');
@@ -84,17 +158,18 @@
       cardEl.style.display = 'none';
 
       try {
-        // SSL証明書が正常でCORS対応の代替API（DummyJSON Quotes API）を使用
+        // APIから名言（英語）を取得
         const response = await fetch('https://dummyjson.com/quotes/random');
-        
-        if (!response.ok) {
-          throw new Error(`HTTPエラー! ステータス: ${response.status}`);
-        }
+        if (!response.ok) throw new Error('データ取得失敗');
 
         const data = await response.json();
 
-        // 取得したデータ（quote: 名言本文, author: 著者名）をセット
-        document.getElementById('quote-text').textContent = `“ ${data.quote} ”`;
+        // 英語テキストを日本語に自動翻訳
+        const translatedText = await translateToJapanese(data.quote);
+
+        // データを要素に挿入
+        document.getElementById('quote-ja').textContent = `“ ${translatedText} ”`;
+        document.getElementById('quote-en').textContent = `“ ${data.quote} ”`;
         document.getElementById('quote-author').textContent = `— ${data.author}`;
 
         loadingEl.style.display = 'none';
@@ -102,7 +177,7 @@
 
       } catch (error) {
         console.error('エラー発生:', error);
-        loadingEl.textContent = 'データの取得に失敗しました。再度の試行をお願いします。';
+        loadingEl.textContent = 'データの取得に失敗しました。再試行してください。';
       }
     }
 
