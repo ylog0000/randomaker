@@ -1,2 +1,2 @@
 # randomaker
-testようリポジトリ
+Test用リポジトリ
