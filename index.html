@@ -32,7 +32,7 @@
     /* 左右の跳ねる猫 */
     .moving-cat {
       display: inline-block;
-      font-size: 1.4em;
+      font-size: 1.7em;
       animation: cat-bounce 1.5s infinite ease-in-out;
     }
 
@@ -47,13 +47,13 @@
       font-size: 1.2em;
       margin: 0 4px;
       display: inline-block;
-      animation: center-rotate 4.5s infinite ease-in-out;
+      animation: center-rotate 4.5s infinite linear;
     }
 
     /* 3秒かけて1回転（360度）させるアニメーション */
     @keyframes center-rotate {
       0% { transform: scale(1) rotate(0deg); }
-      25% { transform: scale(1.6) rotate(90deg); }
+      25% { transform: scale(1.5) rotate(90deg); }
       50% { transform: scale(2.2) rotate(180deg); }
       75% { transform: scale(1.77) rotate(270deg); }
       100% { transform: scale(1) rotate(360deg); }  /* 最後は元の大きさに戻りつつ360度（1回転） */
